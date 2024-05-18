@@ -1,5 +1,6 @@
 import 'package:diet_app/utils/dialogs.dart';
 import 'package:diet_app/utils/validators.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/widgets/forgot_password_link.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,22 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    bool isLoggedIn = await FirebaseAuth.instance.currentUser != null;
+    if (isLoggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +80,9 @@ class _LoginFormState extends State<LoginForm> {
       // Start loading
       context.read<GlobalState>().setLoading(true);
       await AuthService().loginUser(email, password);
-
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login successfully")),
+      );
       // Navigate to home page
       Navigator.push(
         context,

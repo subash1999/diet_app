@@ -1,18 +1,27 @@
 import 'dart:convert';
+import 'package:diet_app/models/user_model.dart';
 import 'package:diet_app/services/meal_service.dart';
+import 'package:diet_app/utils/dialogs.dart';
+import 'package:diet_app/utils/global_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:diet_app/utils/utils.dart';
 
 import '../models/meal_model.dart';
+import 'package:provider/provider.dart';
 
 class MealLoggingDialog extends StatefulWidget {
+  final DateTime? selectedDate;
+
+  MealLoggingDialog({Key? key, this.selectedDate}) : super(key: key);
+
   @override
   _MealLoggingDialogState createState() => _MealLoggingDialogState();
 }
 
 class _MealLoggingDialogState extends State<MealLoggingDialog> {
-  DateTime selectedDate = DateTime.now();
+  late DateTime selectedDate = widget.selectedDate ?? DateTime.now();
   String mealType = 'Breakfast';
 
   // select meal type based on the time of the day
@@ -25,12 +34,15 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
   final TextEditingController foodController = TextEditingController();
   TextEditingController caloriesController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
+
   final TextEditingController mealTypeController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadFoods();
+    dateController.text = intl.DateFormat('yyyy-MM-dd').format(selectedDate);
+    mealTypeController.text = mealType;
   }
 
   Future<void> _loadFoods() async {
@@ -53,12 +65,14 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        dateController.text = intl.DateFormat('yyyy-MM-dd').format(picked);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isLoading = Provider.of<GlobalState>(context).isLoading;
     return AlertDialog(
       title: Text('Log Meal'),
       content: SingleChildScrollView(
@@ -70,7 +84,6 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
                 onTap: _presentDatePicker,
                 child: AbsorbPointer(
                   child: TextFormField(
-                    controller: dateController,
                     initialValue:
                         intl.DateFormat('yyyy-MM-dd').format(selectedDate),
                     decoration: const InputDecoration(
@@ -97,13 +110,14 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
                 onChanged: (String? newValue) {
                   setState(() {
                     mealType = newValue!;
+                    mealTypeController.text = newValue;
                   });
                 },
                 items: <String>[...mealTypeOptions]
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value),
+                    child: Text(value + Utils.getMealTypeIcon(value)),
                   );
                 }).toList(),
                 decoration: const InputDecoration(
@@ -148,9 +162,13 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter or select a food';
                       }
+                      foodController.text = value;
                       return null;
                     },
                   );
+                },
+                onSelected: (String selection) {
+                  foodController.text = selection;
                 },
               ),
               TextFormField(
@@ -178,29 +196,58 @@ class _MealLoggingDialogState extends State<MealLoggingDialog> {
       actions: <Widget>[
         TextButton(
           child: const Text('Cancel'),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: isLoading ? null : () => Navigator.of(context).pop(),
         ),
         TextButton(
           child: const Text('Log'),
-          onPressed: () {
-            // Use the _formKey to validate the form
-            if (_formKey.currentState!.validate()) {
-              // _logMeal();
-              Navigator.of(context).pop();
-            }
-          },
+          onPressed: isLoading
+              ? null
+              : () async {
+                  // Use the _formKey to validate the form
+                  if (_formKey.currentState!.validate()) {
+                    await _logMeal();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Meal record added successfully")),
+                    );
+                    Navigator.of(context).pop();
+                  }
+                },
         ),
       ],
     );
   }
 
-  void _logMeal(String food, double calories, DateTime date, String mealType) {
-    // MealModel({
-    //   uid: 'user1',
-    //   food: food,
-    //   calories: calories,
-    //   date: date,
-    //   type: mealType,
-    // });
+  Future<MealModel?> _logMeal() async {
+    try {
+      context.read<GlobalState>().setLoading(true);
+      final String food = foodController.text;
+      final double calories = double.parse(caloriesController.text);
+      final String date = dateController.text;
+      final String mealType = mealTypeController.text;
+
+      UserModel? user = context.read<GlobalState>().currentUser;
+      if (user == null) {
+        context.read<GlobalState>().setLoading(false);
+        return null;
+      }
+      final String uid = user.uid;
+
+      MealModel meal = MealModel(
+        uid: uid,
+        food: food,
+        calories: calories.toInt(),
+        date: date,
+        type: mealType,
+      );
+
+      await meal.addToFirestore();
+
+      return meal;
+    } catch (e) {
+      showAlertDialog(context, 'Error',
+          'Error Occurred While Logging Meal. Please Try Again.');
+    } finally {
+      context.read<GlobalState>().setLoading(false);
+    }
   }
 }

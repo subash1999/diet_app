@@ -15,6 +15,7 @@ class UserModel {
   double? height;
   String? heightUnit;
   String? passwordResetOtp;
+  DateTime? passwordResetOtpExpiry;
   int? daysToAchieveGoal;
   double? currentWeight;
   double? goalWeight;
@@ -32,6 +33,7 @@ class UserModel {
     this.height,
     this.heightUnit,
     this.passwordResetOtp,
+    this.passwordResetOtpExpiry,
     this.currentWeight,
     this.goalWeight,
     this.weightUnit,
@@ -48,6 +50,7 @@ class UserModel {
       'gender': gender,
       'height': height,
       'passwordResetOtp': passwordResetOtp,
+      'passwordResetOtpExpiry': passwordResetOtpExpiry,
       'currentWeight': currentWeight,
       'goalWeight': goalWeight,
       'WeightUnit': weightUnit,
@@ -65,6 +68,7 @@ class UserModel {
       email: map['email'],
       height: map['height'],
       passwordResetOtp: map['passwordResetOtp'],
+      passwordResetOtpExpiry: map['passwordResetOtpExpiry'],
       daysToAchieveGoal: map['daysToAchieveGoal'],
       currentWeight: map['currentWeight'],
       goalWeight: map['goalWeight'],

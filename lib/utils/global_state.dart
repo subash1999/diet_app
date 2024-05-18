@@ -6,12 +6,18 @@ class GlobalState with ChangeNotifier {
   UserModel? _user;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoading = false;
+  bool _needToUpdateHomePage = false;
+  DateTime _dashboardDate = DateTime.now();
 
   bool get isLoading => _isLoading;
 
   UserModel? get user => _user;
 
   UserModel? get currentUser => _user;
+
+  bool get needToUpdateHomePage => _needToUpdateHomePage;
+
+  DateTime get dashboardDate => _dashboardDate;
 
   // Getter to check if a user is logged in
   bool get isLoggedIn => FirebaseAuth.instance.currentUser != null;
@@ -50,6 +56,16 @@ class GlobalState with ChangeNotifier {
 
   void setCurrentUser(UserModel? user) {
     setUser(user);
+    notifyListeners();
+  }
+
+  void updateHomePageState(bool value) {
+    _needToUpdateHomePage = value;
+    notifyListeners();
+  }
+
+  void setDashboardDate(DateTime date) {
+    _dashboardDate = date;
     notifyListeners();
   }
 }

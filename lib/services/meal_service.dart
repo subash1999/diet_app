@@ -11,17 +11,18 @@ class MealService {
     // get the current date
     String todayDate = Utils.todayDate();
     // search for meals of the current date
-    return await MealModel.searchMealsOfDayForUser(
+    return await MealModel.searchMealsForUserOfDay(
         _auth.currentUser!.uid, todayDate);
   }
 
   // find today's total calories
-  static Future<int> searchTodayTotalCaloriesForCurrentUser() async {
+  static Future<int> searchTotalCaloriesForCurrentUserForDate(
+      String date) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     // get the current date
-    String todayDate = Utils.todayDate();
+    String todayDate = date;
     // search for meals of the current date
-    List<MealModel> meals = await MealModel.searchMealsOfDayForUser(
+    List<MealModel> meals = await MealModel.searchMealsForUserOfDay(
         _auth.currentUser!.uid, todayDate);
     // calculate the total calories
     int totalCalories = 0;
@@ -29,6 +30,10 @@ class MealService {
       totalCalories += meal.calories;
     });
     return totalCalories;
+  }
+
+  static Future<MealModel?> findMealById(String mealId) async {
+    return await MealModel.fetchFromFirestore(mealId);
   }
 
   static Future deleteMeal(MealModel meal) async {
@@ -39,10 +44,23 @@ class MealService {
     }
   }
 
+  // delete meal for user check if meal id belongs to current uid
+  static Future deleteMealForUser(String mealId) async {
+    MealModel? meal = await findMealById(mealId);
+    if (meal != null) {
+      final FirebaseAuth _auth = FirebaseAuth.instance;
+      if (meal.uid == _auth.currentUser!.uid) {
+        await deleteMeal(meal);
+      } else {
+        throw Exception('Meal not found');
+      }
+    }
+  }
+
   static Future<List<MealModel>> searchMealsOfCurrentUserForDate(
       String date) async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
-    return await MealModel.searchMealsOfDayForUser(
+    return await MealModel.searchMealsForUserOfDay(
         _auth.currentUser!.uid, date);
   }
 
@@ -55,7 +73,7 @@ class MealService {
   }
 
   static Future<void> deleteMealsForUserAndDate(String uid, String date) async {
-    List<MealModel> meals = await MealModel.searchMealsOfDayForUser(uid, date);
+    List<MealModel> meals = await MealModel.searchMealsForUserOfDay(uid, date);
     meals.forEach((meal) async {
       await MealModel.deleteFromFirestore(meal.id as String);
     });

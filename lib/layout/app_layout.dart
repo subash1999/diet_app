@@ -185,6 +185,9 @@ class _AppLayoutState extends State<AppLayout> {
       context.read<GlobalState>().setLoading(true);
       await AuthService().logoutUser();
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Logout successfully")),
+      );
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),

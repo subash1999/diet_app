@@ -95,11 +95,34 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
 
       // You can perform password reset logic here
       final otp = OTP.generateOTP();
+      // this a temporary measure to show the OTP in the popup
+      user.passwordResetOtp = HashUtil.generateHash(otp);
+      user.passwordResetOtpExpiry =
+          DateTime.now().add(const Duration(minutes: 5));
+      await user.updateInFirestore();
+      // when fixed the user will receive an email with the OTP
+      // the above 3 lines will be removed and the below line will be uncommented
       // await AuthService().sendPasswordResetEmail(
       //     "Please use this code to reset your password: $otp");
 
-      user.passwordResetOtp = otp;
-      await user.updateInFirestore();
+      String otpMessage = "Please use this code to reset your password: $otp";
+      otpMessage += "\n\nThis code will expire in 5 minutes.";
+
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("OTP To Reset Password"),
+            content: Text("Please use this code to reset your password: $otp"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      );
 
       // Navigate to the OTP verification page
       Navigator.push(
