@@ -1,5 +1,6 @@
 import 'package:diet_app/utils/dialogs.dart';
 import 'package:diet_app/utils/validators.dart';
+import 'package:diet_app/widgets/gender_auto_complete.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
@@ -42,6 +44,8 @@ class _SignUpFormState extends State<SignUpForm> {
               return null;
             },
           ),
+          const SizedBox(height: 16),
+          GenderAutoComplete(genderController: _genderController),
           const SizedBox(height: 16),
           DOBField(dobController: _dobController),
           const SizedBox(height: 16),
@@ -91,13 +95,14 @@ class _SignUpFormState extends State<SignUpForm> {
     final dob = _dobController.text;
     final email = _emailController.text;
     final password = _passwordController.text;
+    final gender = _genderController.text;
 
     try {
       // Start loading
       context.read<GlobalState>().setLoading(true);
 
       // Use AuthService to register user
-      await AuthService().registerUser(name, dob, email, password);
+      await AuthService().registerUser(name, dob, gender, email, password);
 
       // Optionally, log in the user immediately after registration
       await AuthService().loginUser(email, password);

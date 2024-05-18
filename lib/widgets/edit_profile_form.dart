@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/global_state.dart';
+import 'gender_auto_complete.dart';
 
 class EditProfileForm extends StatefulWidget {
   @override
@@ -21,6 +22,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _daysToAchieveGoalController =
       TextEditingController();
@@ -72,6 +74,8 @@ class _EditProfileFormState extends State<EditProfileForm> {
           ),
           const SizedBox(height: 20),
           DOBField(dobController: _dobController),
+          const SizedBox(height: 20),
+          GenderAutoComplete(genderController: _genderController),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -195,6 +199,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
         email: _user.email,
         name: _nameController.text,
         dob: _dobController.text,
+        gender: _genderController.text,
         height: double.tryParse(_heightController.text),
         weightUnit: _weightUnit,
         currentWeight: double.tryParse(_currentWeightController.text),
@@ -224,6 +229,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
       _email = user.email ?? '';
       _nameController.text = user.name ?? '';
       _dobController.text = user.dob ?? '';
+      _genderController.text = user.gender ?? '';
       _heightController.text =
           user.height.toString() != 'null' ? user.height.toString() : '';
       _daysToAchieveGoalController.text =

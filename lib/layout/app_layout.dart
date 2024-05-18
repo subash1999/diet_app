@@ -39,9 +39,6 @@ class _AppLayoutState extends State<AppLayout> {
 
     // Access environment variable 'APP_TITLE' or use default value
     String? appTitle = Platform.environment['APP_NAME'] ?? 'Diet App';
-    appTitle = 'Welcome to $appTitle';
-    appTitle =
-        user != null ? GreetingUtil.greetUserWithEmoji(user.name) : appTitle;
 
     if (widget.title.isNotEmpty) {
       appTitle = widget.title;

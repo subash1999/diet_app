@@ -6,11 +6,10 @@ import 'package:flutter/material.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   UserModel? _currentUser;
 
-  Future<UserModel> registerUser(
-      String name, String dob, String email, String password) async {
+  Future<UserModel> registerUser(String name, String dob, String gender,
+      String email, String password) async {
     UserCredential? userCredential;
     try {
       // Create user with email and password
@@ -25,6 +24,7 @@ class AuthService {
         name: name,
         dob: dob,
         email: email,
+        gender: gender,
       );
 
       // Add the new user to Firestore
@@ -41,9 +41,9 @@ class AuthService {
     }
   }
 
-  Future<UserModel> signUp(
-      String name, String dob, String email, String password) async {
-    return await registerUser(name, dob, email, password);
+  Future<UserModel> signUp(String name, String dob, String gender, String email,
+      String password) async {
+    return await registerUser(name, dob, gender, email, password);
   }
 
   Future<UserModel> loginUser(String email, String password) async {

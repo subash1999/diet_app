@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:diet_app/utils/utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../utils/hash_util.dart';
@@ -10,6 +11,7 @@ class UserModel {
   String name;
   String dob;
   String email;
+  String? gender;
   double? height;
   String? heightUnit;
   String? passwordResetOtp;
@@ -25,6 +27,7 @@ class UserModel {
     required this.uid,
     required this.name,
     required this.dob,
+    required this.gender,
     required this.email,
     this.height,
     this.heightUnit,
@@ -42,6 +45,7 @@ class UserModel {
       'name': name,
       'dob': dob,
       'email': email,
+      'gender': gender,
       'height': height,
       'passwordResetOtp': passwordResetOtp,
       'currentWeight': currentWeight,
@@ -57,6 +61,7 @@ class UserModel {
       uid: map['uid'],
       name: map['name'],
       dob: map['dob'],
+      gender: map['gender'],
       email: map['email'],
       height: map['height'],
       passwordResetOtp: map['passwordResetOtp'],
@@ -133,5 +138,33 @@ class UserModel {
       throw Exception('User not found');
     }
     return userModel;
+  }
+
+  int findDailyGoalCaloriesForUser() {
+    if (dob == null || height == null || currentWeight == null) {
+      return -1;
+    }
+    int age = Utils.calculateAge(dob);
+    if (age == -1) {
+      age = 30;
+    }
+    double weight = currentWeight ?? 0.0; // Assuming currentWeight is a double
+    String gender = this.gender ?? "unknown"; // Handling potential null gender
+    int heightInCm = height?.toInt() ?? 0;
+
+    int normalCalorieRequired = CalorieCalculator.calculateDailyCalories(
+            age: age, height: heightInCm, weight: weight, gender: gender)
+        .toInt();
+    int calorieCutForWeightLoss = 0;
+    if (goalWeight != null &&
+        daysToAchieveGoal != null &&
+        currentWeight != 0 &&
+        goalWeight != 0 &&
+        daysToAchieveGoal != 0) {
+      calorieCutForWeightLoss = CalorieCalculator.calorieToCutPerDay(
+          currentWeight, goalWeight, daysToAchieveGoal);
+    }
+
+    return normalCalorieRequired - calorieCutForWeightLoss;
   }
 }

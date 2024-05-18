@@ -14,6 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.2
+  intl: ^0.18.1
 
 
   path_provider: any
@@ -27,3 +28,4 @@ flutter:
   uses-material-design: true
   assets:
   - assets/images/login_image.png
+  - assets/foods.json
