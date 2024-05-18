@@ -2,12 +2,12 @@ import 'package:diet_app/utils/dialogs.dart';
 import 'package:diet_app/utils/validators.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:diet_app/models/user_model.dart';
 
+import '../screens/home_page.dart';
 import '../services/auth_service.dart';
 import '../utils/global_state.dart';
+import 'dob_field.dart';
 
 class SignUpForm extends StatefulWidget {
   const SignUpForm({super.key});
@@ -24,7 +24,6 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -44,29 +43,7 @@ class _SignUpFormState extends State<SignUpForm> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _dobController,
-            decoration: const InputDecoration(
-              labelText: 'Date of Birth',
-              hintText: 'YYYY-MM-DD',
-            ),
-            readOnly: true,
-            onTap: () async {
-              final DateTime? dob = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
-              );
-              if (dob != null) {
-                setState(() {
-                  _dobController.text =
-                      '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day}';
-                });
-              }
-            },
-            validator: DateValidator.validate,
-          ),
+          DOBField(dobController: _dobController),
           const SizedBox(height: 16),
           TextFormField(
             controller: _emailController,
@@ -99,10 +76,6 @@ class _SignUpFormState extends State<SignUpForm> {
           ElevatedButton(
             onPressed: () {
               if (_formKey.currentState!.validate()) {
-                // show a loading spinner
-                setState(() {
-                  _isLoading = true;
-                });
                 _registerUser();
               }
             },
@@ -128,7 +101,14 @@ class _SignUpFormState extends State<SignUpForm> {
 
       // Optionally, log in the user immediately after registration
       await AuthService().loginUser(email, password);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
     } on FirebaseAuthException catch (e) {
+      // signout if user signed in while registering
+      await AuthService().signOut();
       if (e.code == 'email-already-in-use') {
         // Email already exists
         showAlertDialog(context, 'User Already Exists',

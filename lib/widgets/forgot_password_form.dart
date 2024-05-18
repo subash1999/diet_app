@@ -1,5 +1,15 @@
+import 'package:diet_app/screens/otp_verification_page.dart';
+import 'package:diet_app/utils/dialogs.dart';
 import 'package:diet_app/utils/validators.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
+import '../utils/global_state.dart';
+import '../utils/hash_util.dart';
+import '../utils/otp.dart';
+import 'dob_field.dart';
 
 class ForgotPasswordForm extends StatefulWidget {
   const ForgotPasswordForm({super.key});
@@ -16,6 +26,15 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
 
   @override
   Widget build(BuildContext context) {
+    // get current user
+    UserModel? _user = context.read<GlobalState>().currentUser;
+    // if the user is already logged in, fill up the name, dob, and email fields
+    if (_user != null) {
+      _nameController.text = _user.name ?? '';
+      _dobController.text = _user.dob ?? '';
+      _emailController.text = _user.email ?? '';
+    }
+
     return Form(
       key: _formKey,
       child: Column(
@@ -32,28 +51,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _dobController,
-            decoration: const InputDecoration(
-              labelText: 'Date of Birth',
-              hintText: 'YYYY-MM-DD'
-            ),
-            readOnly: true,
-            onTap: () async {
-              final DateTime? dob = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
-              );
-              if (dob != null) {
-                setState(() {
-                  _dobController.text = '${dob.year}-${dob.month}-${dob.day}';
-                });
-              }
-            },
-            validator: DateValidator.validate,
-          ),
+          DOBField(dobController: _dobController),
           const SizedBox(height: 16),
           TextFormField(
             controller: _emailController,
@@ -66,42 +64,57 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             onPressed: () {
               if (_formKey.currentState!.validate()) {
                 // All fields are valid, process the reset password logic
-                _resetPassword();
+                _sendPasswordResetEmail();
               }
             },
-            child: const Text('Reset Password'),
+            child: const Text('Send Reset Password Email'),
           ),
         ],
       ),
     );
   }
 
-  void _resetPassword() {
-    final String name = _nameController.text;
-    final String dob = _dobController.text;
-    final String email = _emailController.text;
+  void _sendPasswordResetEmail() async {
+    try {
+      context.read<GlobalState>().setLoading(true);
+      final String name = _nameController.text;
+      final String dob = _dobController.text;
+      final String email = _emailController.text;
 
-    // You can perform password reset logic here
-    // For example, validate the user's information against the database
-    // If the information matches, generate a new password, hash it, and update the database
+      // check if the user exists in the database
+      // if the user exists, send a password reset email
+      UserModel? user =
+          await AuthService().checkUserExistsByNameDobEmail(name, dob, email);
 
-    // For demo purposes, let's assume the reset was successful
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Password Reset Successful'),
-          content: const Text('Your password has been reset successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+      // if the user does not exist, show an error message
+      if (user == null) {
+        showAlertDialog(context, 'No User Found',
+            'User does not exist. $name, $dob, $email');
+        return;
+      }
+
+      // You can perform password reset logic here
+      final otp = OTP.generateOTP();
+      // await AuthService().sendPasswordResetEmail(
+      //     "Please use this code to reset your password: $otp");
+
+      user.passwordResetOtp = otp;
+      await user.updateInFirestore();
+
+      // Navigate to the OTP verification page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OTPVerificationPage()),
+      );
+    } catch (e) {
+      if (e.toString().contains('invalid-email')) {
+        showAlertDialog(context, 'Error', 'The email address is invalid.');
+      } else {
+        showAlertDialog(context, 'Error',
+            'An error occurred while sending the password reset email. Please try again.');
+      }
+    } finally {
+      context.read<GlobalState>().setLoading(false);
+    }
   }
 }

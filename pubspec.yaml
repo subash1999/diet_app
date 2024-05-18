@@ -17,6 +17,7 @@ dependencies:
 
 
   path_provider: any
+  crypto: ^3.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,4 +1,3 @@
-
 class EmailValidator {
   static String? validate(String? value) {
     if (value == null || value.isEmpty) {
@@ -87,5 +86,22 @@ class PasswordValidator {
     }
 
     return null; // Password is valid
+  }
+}
+
+class RangeValidator {
+  static String? validate(String? value,
+      {required double min, required double max}) {
+    if (value == null || value.isEmpty) {
+      return null; // Value is optional
+    }
+    final number = double.tryParse(value);
+    if (number == null) {
+      return 'Please enter a valid number';
+    }
+    if (number < min || number > max) {
+      return 'Please enter between $min and $max';
+    }
+    return null; // Value is within the specified range
   }
 }

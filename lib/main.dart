@@ -1,6 +1,8 @@
 import 'package:diet_app/firebase_options.dart';
+import 'package:diet_app/screens/home_page.dart';
 import 'package:diet_app/utils/dialogs.dart';
 import 'package:diet_app/utils/global_state.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/screens/login_page.dart';
@@ -14,6 +16,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // loud the Firebase auth
+  await FirebaseAuth.instance.signOut();
 
   // Run the app and provide the global state
   runApp(
@@ -53,13 +58,18 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Diet Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
-        useMaterial3: true,
-      ),
-      home: const LoginPage(),
+    return Consumer<GlobalState>(
+      builder: (context, state, _) {
+        return MaterialApp(
+          title: 'Diet Demo',
+          theme: ThemeData(
+            colorScheme:
+                ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
+            useMaterial3: true,
+          ),
+          home: state.isLoggedIn ? const HomePage() : const LoginPage(),
+        );
+      },
     );
   }
 }
