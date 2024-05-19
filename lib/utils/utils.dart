@@ -29,7 +29,10 @@ class GreetingUtil {
   }
 
   static String greetUserWithEmoji(String name, String? dob) {
-    if (dob != null && Utils.todayDate() == dob) {
+    // check if today is user's birthday based on month and day
+    if (dob != null &&
+        dob.length >= 5 &&
+        dob.substring(5) == Utils.todayDate().substring(5)) {
       return 'Happy Birthday $name 🎂';
     }
     String greeting = getGreeting();
